@@ -38,11 +38,6 @@ int check_archive(int tar_fd)
  * @return zero if no entry at the given path exists in the archive,
  *         any other value otherwise.
  */
-<<<<<<< HEAD
-int exists(int tar_fd, char *path)
-{
-    return 0;
-=======
 int exists(int tar_fd, char *path) {
 	struct posix_header header;
 	int returnValue = 0;
@@ -54,29 +49,7 @@ int exists(int tar_fd, char *path) {
 		lseek(tar_fd, atoi(header.size), SEEK_CUR);
 	}
 	return returnValue;
->>>>>>> e298ce831526abd1a0917e698e2c4a6c95bbd831
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * Checks whether an entry exists in the archive and is a directory.
