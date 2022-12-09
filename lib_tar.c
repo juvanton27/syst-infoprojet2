@@ -1,5 +1,8 @@
 #include "lib_tar.h"
 
+#include <stdio.h>
+#include <string.h>
+
 /**
  * Checks whether the archive is valid.
  *
@@ -15,7 +18,14 @@
  *         -2 if the archive contains a header with an invalid version value,
  *         -3 if the archive contains a header with an invalid checksum value
  */
-int check_archive(int tar_fd) {
+int check_archive(int tar_fd)
+{
+    tar_header_t head;
+    int ret = read(tar_fd, &head, sizeof(head));
+    if(ret < 0) perror("Fail reading");
+    if(!strcmp(head.magic, "ustar") && !strcmp(head.magic, "\0")) return -1;
+    if(!strstr(head.version, "00")) return -2;
+    if(head.chksum < 0) return -3;
     return 0;
 }
 
@@ -28,7 +38,8 @@ int check_archive(int tar_fd) {
  * @return zero if no entry at the given path exists in the archive,
  *         any other value otherwise.
  */
-int exists(int tar_fd, char *path) {
+int exists(int tar_fd, char *path)
+{
     return 0;
 }
 
@@ -41,7 +52,8 @@ int exists(int tar_fd, char *path) {
  * @return zero if no entry at the given path exists in the archive or the entry is not a directory,
  *         any other value otherwise.
  */
-int is_dir(int tar_fd, char *path) {
+int is_dir(int tar_fd, char *path)
+{
     return 0;
 }
 
@@ -54,7 +66,8 @@ int is_dir(int tar_fd, char *path) {
  * @return zero if no entry at the given path exists in the archive or the entry is not a file,
  *         any other value otherwise.
  */
-int is_file(int tar_fd, char *path) {
+int is_file(int tar_fd, char *path)
+{
     return 0;
 }
 
@@ -66,10 +79,10 @@ int is_file(int tar_fd, char *path) {
  * @return zero if no entry at the given path exists in the archive or the entry is not symlink,
  *         any other value otherwise.
  */
-int is_symlink(int tar_fd, char *path) {
+int is_symlink(int tar_fd, char *path)
+{
     return 0;
 }
-
 
 /**
  * Lists the entries at a given path in the archive.
@@ -93,7 +106,8 @@ int is_symlink(int tar_fd, char *path) {
  * @return zero if no directory at the given path exists in the archive,
  *         any other value otherwise.
  */
-int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
+int list(int tar_fd, char *path, char **entries, size_t *no_entries)
+{
     return 0;
 }
 
@@ -115,6 +129,7 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
  *         the end of the file.
  *
  */
-ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len) {
+ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len)
+{
     return 0;
 }
