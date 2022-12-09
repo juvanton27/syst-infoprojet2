@@ -29,8 +29,38 @@ int check_archive(int tar_fd) {
  *         any other value otherwise.
  */
 int exists(int tar_fd, char *path) {
-    return 0;
+	struct posix_header header;
+	int returnValue = 0;
+	while(read(tar_fd, &header, sizeof(header)) > 0) {
+		if (strcmp(header.name, path) == 0) {
+			returnValue = 1;
+			break;
+		}
+		lseek(tar_fd, atoi(header.size), SEEK_CUR);
+	}
+	return returnValue;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /**
  * Checks whether an entry exists in the archive and is a directory.
