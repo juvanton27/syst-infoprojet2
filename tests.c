@@ -36,8 +36,17 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    int ret = check_archive(fd);
-    printf("check_archive returned %d\n", ret);
+    int check = check_archive(fd);
+    printf("check_archive returned %d\n", check);
+
+    // int exist = exists(fd, "lib_tar.w");
+    // printf("exists returned %d\n", exist);
+
+    // int dir = is_dir(fd, "test");
+    // printf("is_dir returned %d\n", dir);
+
+    // int file = is_file(fd, "tests.c");
+    // printf("is_file returned %d\n", file);
 
     return 0;
 }

@@ -4,6 +4,17 @@
 #include <string.h>
 
 /**
+ * Private method for devlopment purpose
+ * Prints the header
+*/
+void print_header(tar_header_t *head)
+{
+    printf("Printing header ...\n");
+    printf("Name: %s\nMode: %s\nUID: %s\nGID: %s\nSize: %s\nMtime: %s\nChksum: %s\nTypeflag: %c\nLinkname: %s\nMagic: %s\nVersion: %s\nUname: %s\nGname: %s\nDevMajor: %s\nDevMinor: %s\nPrefix: %s\nPadding: %s\n", head->name, head->mode, head->uid, head->gid, head->size, head->mtime, head->chksum, head->typeflag, head->linkname, head->magic, head->version, head->uname, head->gname, head->devmajor, head->devminor, head->prefix, head->padding);
+    printf("Ending printing header ...\n\n");
+}
+
+/**
  * Checks whether the archive is valid.
  *
  * Each non-null header of a valid archive has:
@@ -20,12 +31,17 @@
  */
 int check_archive(int tar_fd)
 {
-    tar_header_t head;
-    int ret = read(tar_fd, &head, sizeof(head));
-    if(ret < 0) perror("Fail reading");
-    if(!strcmp(head.magic, "ustar") && !strcmp(head.magic, "\0")) return -1;
-    if(!strstr(head.version, "00")) return -2;
-    if(head.chksum < 0) return -3;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    int ret = lseek(tar_fd, 0, SEEK_SET);
+    while(read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        printf("seek %i, head: %lu, size: %i\n", ret, sizeof(tar_header_t),atoi(head->size));
+        print_header(head);
+        if(!strcmp(head->magic, "ustar") && !strcmp(head->magic, "\0")) return -1;
+        if(!strstr(head->version, "00")) return -2;
+        if(head->chksum < 0) return -3;
+		ret = lseek(tar_fd, atoi(head->size), SEEK_CUR);
+    }
     return 0;
 }
 
@@ -62,7 +78,13 @@ int exists(int tar_fd, char *path) {
  */
 int is_dir(int tar_fd, char *path)
 {
-    return 0;
+    tar_header_t head;
+    int returnValue = exists(tar_fd, path);
+    // Checks if file exists
+    if(returnValue != 0) return returnValue;
+    int ret = read(tar_fd, &head, sizeof(head));
+    if(ret<0) perror("Fail reading");
+    return head.typeflag == '5';
 }
 
 /**
@@ -76,7 +98,13 @@ int is_dir(int tar_fd, char *path)
  */
 int is_file(int tar_fd, char *path)
 {
-    return 0;
+    tar_header_t head;
+    int returnValue = exists(tar_fd, path);
+    // Checks if file exists
+    if(returnValue != 0) return returnValue;
+    int ret = read(tar_fd, &head, sizeof(head));
+    if(ret<0) perror("Fail reading");
+    return head.typeflag == '0' || head.typeflag == '\0';
 }
 
 /**
