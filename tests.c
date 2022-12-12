@@ -36,17 +36,39 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    printf("\nDescribe: check_archive\n");
     int check = check_archive(fd);
-    printf("check_archive returned %d\n", check);
+    printf("It should return 0 : ");
+    printf("returned %d\n", check);
 
-    // int exist = exists(fd, "lib_tar.w");
-    // printf("exists returned %d\n", exist);
+    printf("\nDescribe: exists\n");
+    int exist = exists(fd, "lib_tar.w");
+    printf("It should return 0 : ");
+    printf("returned %d\n", exist);
+    exist = exists(fd, "lib_tar.c");
+    printf("It should return 1 : ");
+    printf("returned %d\n", exist);
 
-    // int dir = is_dir(fd, "test");
-    // printf("is_dir returned %d\n", dir);
+    printf("\nDescribe: is_dir\n");
+    int dir = is_dir(fd, "tests.c");
+    printf("It should return 0 : ");
+    printf("returned %d\n", dir);
+    dir = is_dir(fd, "test/");
+    printf("It should return 1 : ");
+    printf("returned %d\n", dir);
 
-    // int file = is_file(fd, "tests.c");
-    // printf("is_file returned %d\n", file);
+    printf("\nDescribe: is_file\n");
+    int file = is_file(fd, "test/");
+    printf("It should return 0 : ");
+    printf("returned %d\n", file);
+    file = is_file(fd, "tests.c");
+    printf("It shoud return 1 : ");
+    printf("returned %d\n", file);
+    
+    printf("\nDescribe: is_symlink\n");
+    int link = is_symlink(fd, "tests.c");
+    printf("It should return 0 : ");
+    printf("returned %d\n", link);
 
     return 0;
 }

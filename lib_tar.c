@@ -2,11 +2,12 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 /**
  * Private method for devlopment purpose
  * Prints the header
-*/
+ */
 void print_header(tar_header_t *head)
 {
     printf("Printing header ...\n");
@@ -32,15 +33,23 @@ void print_header(tar_header_t *head)
 int check_archive(int tar_fd)
 {
     tar_header_t *head = malloc(sizeof(tar_header_t));
-    int ret = lseek(tar_fd, 0, SEEK_SET);
-    while(read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
     {
-        printf("seek %i, head: %lu, size: %i\n", ret, sizeof(tar_header_t),atoi(head->size));
-        print_header(head);
-        if(!strcmp(head->magic, "ustar") && !strcmp(head->magic, "\0")) return -1;
-        if(!strstr(head->version, "00")) return -2;
-        if(head->chksum < 0) return -3;
-		ret = lseek(tar_fd, atoi(head->size), SEEK_CUR);
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->magic, "ustar") != 0 && strcmp(head->magic, "\0") != 0)
+                return -1;
+            char version[3];
+            version[2] = '\0';
+            if (strcmp(strncpy(version, head->version, 2), "00") != 0)
+                return -2;
+            if (head->chksum < 0)
+                return -3;
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
     }
     return 0;
 }
@@ -54,17 +63,22 @@ int check_archive(int tar_fd)
  * @return zero if no entry at the given path exists in the archive,
  *         any other value otherwise.
  */
-int exists(int tar_fd, char *path) {
-	struct posix_header header;
-	int returnValue = 0;
-	while(read(tar_fd, &header, sizeof(header)) > 0) {
-		if (strcmp(header.name, path) == 0) {
-			returnValue = 1;
-			break;
-		}
-		lseek(tar_fd, atoi(header.size), SEEK_CUR);
-	}
-	return returnValue;
+int exists(int tar_fd, char *path)
+{
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->name, path) == 0)
+                return 1;
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
+    return 0;
 }
 
 /**
@@ -78,13 +92,23 @@ int exists(int tar_fd, char *path) {
  */
 int is_dir(int tar_fd, char *path)
 {
-    tar_header_t head;
-    int returnValue = exists(tar_fd, path);
-    // Checks if file exists
-    if(returnValue != 0) return returnValue;
-    int ret = read(tar_fd, &head, sizeof(head));
-    if(ret<0) perror("Fail reading");
-    return head.typeflag == '5';
+    if(exists(tar_fd, path) == 0) return 0;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->name, path) == 0)
+            {
+                return head->typeflag == '5';
+            }
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
+    return 0;
 }
 
 /**
@@ -98,13 +122,23 @@ int is_dir(int tar_fd, char *path)
  */
 int is_file(int tar_fd, char *path)
 {
-    tar_header_t head;
-    int returnValue = exists(tar_fd, path);
-    // Checks if file exists
-    if(returnValue != 0) return returnValue;
-    int ret = read(tar_fd, &head, sizeof(head));
-    if(ret<0) perror("Fail reading");
-    return head.typeflag == '0' || head.typeflag == '\0';
+    if(exists(tar_fd, path) == 0) return 0;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->name, path) == 0)
+            {
+                return head->typeflag == '0' || head->typeflag == '\0';
+            }
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
+    return 0;
 }
 
 /**
@@ -117,6 +151,22 @@ int is_file(int tar_fd, char *path)
  */
 int is_symlink(int tar_fd, char *path)
 {
+    if(exists(tar_fd, path) == 0) return 0;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->name, path) == 0)
+            {
+                return head->typeflag == '2';
+            }
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
     return 0;
 }
 
