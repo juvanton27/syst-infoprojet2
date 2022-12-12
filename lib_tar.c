@@ -265,7 +265,9 @@ ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *
                 int size = strtol(head->size, NULL, 8)-offset;
                 lseek(tar_fd, offset, SEEK_CUR);
                 read(tar_fd, dest, size);
-                *len -= size;
+                int remaining = *len-size;
+                *len = size;
+                return remaining;
             }
             int offset = strtol(head->size, NULL, 8);
             int size = sizeof(tar_header_t);
