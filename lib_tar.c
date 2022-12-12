@@ -33,9 +33,11 @@ void print_header(tar_header_t *head)
 int check_archive(int tar_fd)
 {
     tar_header_t *head = malloc(sizeof(tar_header_t));
+    // Set head at start of tar file
     lseek(tar_fd, 0, SEEK_SET);
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
     {
+        // Check if header not null
         if (strcmp((char *)head, "\0"))
         {
             if (strcmp(head->magic, "ustar") != 0 && strcmp(head->magic, "\0") != 0)
@@ -92,7 +94,8 @@ int exists(int tar_fd, char *path)
  */
 int is_dir(int tar_fd, char *path)
 {
-    if(exists(tar_fd, path) == 0) return 0;
+    if (exists(tar_fd, path) == 0)
+        return 0;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     lseek(tar_fd, 0, SEEK_SET);
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
@@ -122,7 +125,8 @@ int is_dir(int tar_fd, char *path)
  */
 int is_file(int tar_fd, char *path)
 {
-    if(exists(tar_fd, path) == 0) return 0;
+    if (exists(tar_fd, path) == 0)
+        return 0;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     lseek(tar_fd, 0, SEEK_SET);
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
@@ -151,7 +155,8 @@ int is_file(int tar_fd, char *path)
  */
 int is_symlink(int tar_fd, char *path)
 {
-    if(exists(tar_fd, path) == 0) return 0;
+    if (exists(tar_fd, path) == 0)
+        return 0;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     lseek(tar_fd, 0, SEEK_SET);
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
@@ -194,6 +199,36 @@ int is_symlink(int tar_fd, char *path)
  */
 int list(int tar_fd, char *path, char **entries, size_t *no_entries)
 {
+    if (is_dir(tar_fd, path) == 0)
+        return 0;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if(strcmp(head->name, path) == 0)
+            {
+                char* directory = malloc(sizeof(char));
+                strcpy(directory, head->name);
+                int counter = 0;
+                // Checks if no_entries not exceeded, if characters can still be read and if we are still in the right folder
+                while(counter < *no_entries && read(tar_fd, head, sizeof(tar_header_t)) > 0 && strstr(head->name, directory) != NULL)
+                {
+                    strcpy(*(entries+counter), head->name);
+                    int offset = strtol(head->size, NULL, 8);
+                    int size = sizeof(tar_header_t);
+                    lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+                    counter++;
+                }
+                *no_entries = counter;
+                return 1;
+            }
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
     return 0;
 }
 
@@ -217,5 +252,25 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
  */
 ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len)
 {
+    if(exists(tar_fd, path) == 0 || is_file(tar_fd, path) == 0) return -1;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        if (strcmp((char *)head, "\0"))
+        {
+            if (strcmp(head->name, path) == 0)
+            {
+                if(offset > strtol(head->size, NULL, 8)) return -2;
+                int size = strtol(head->size, NULL, 8)-offset;
+                lseek(tar_fd, offset, SEEK_CUR);
+                read(tar_fd, dest, size);
+                *len -= size;
+            }
+            int offset = strtol(head->size, NULL, 8);
+            int size = sizeof(tar_header_t);
+            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+        }
+    }
     return 0;
 }
