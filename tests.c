@@ -36,41 +36,69 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    /**
+     * @brief check_archive UT
+     */
     printf("\nDescribe: check_archive\n");
+
     int check = check_archive(fd);
     printf("It should return 0 : ");
     printf("returned %d\n", check);
 
+    /**
+     * @brief exists UT
+     */
     printf("\nDescribe: exists\n");
+
     int exist = exists(fd, "lib_tar.w");
     printf("It should return 0 : ");
     printf("returned %d\n", exist);
+
     exist = exists(fd, "lib_tar.c");
     printf("It should return 1 : ");
     printf("returned %d\n", exist);
 
+    /**
+     * @brief is_dir UT
+     */
     printf("\nDescribe: is_dir\n");
+
     int dir = is_dir(fd, "tests.c");
     printf("It should return 0 : ");
     printf("returned %d\n", dir);
+
     dir = is_dir(fd, "test/");
     printf("It should return 1 : ");
     printf("returned %d\n", dir);
 
+    /**
+     * @brief is_file UT
+     */
     printf("\nDescribe: is_file\n");
+
     int file = is_file(fd, "test/");
     printf("It should return 0 : ");
     printf("returned %d\n", file);
+
     file = is_file(fd, "tests.c");
     printf("It shoud return 1 : ");
     printf("returned %d\n", file);
     
+    /**
+     * @brief is_symlink UT
+     */
     printf("\nDescribe: is_symlink\n");
+
     int link = is_symlink(fd, "tests.c");
     printf("It should return 0 : ");
     printf("returned %d\n", link);
 
+    /**
+     * @brief list UT
+     */
     printf("\nDescribe: list\n");
+
+    // Preparing resources
     size_t * no_entries = (size_t*) malloc(sizeof(size_t));
     *no_entries = (size_t) 3;
     char ** entries = (char **) malloc(*no_entries*sizeof(char*));
@@ -78,6 +106,7 @@ int main(int argc, char **argv) {
     {
         entries[i] = (char*) malloc(sizeof(char*));
     }
+
     int listed = list(fd, "test/", entries, no_entries);
     printf("List : [");
     for(int i=0; i<*no_entries; i++)
@@ -88,29 +117,51 @@ int main(int argc, char **argv) {
     printf("Size : %zu\n", *no_entries);
     printf("It should return 1 : ");
     printf("returned %d\n", listed);
+
     listed = list(fd, "tests.c", entries, no_entries);
     printf("It should return 0 : ");
     printf("returned %d\n", listed);
+
+    // Freeing resources
     free(entries);
     free(no_entries);
 
+    /**
+     * @brief read_file
+     */
     printf("\nDescribe: read_file\n");
+
+    // Preparing resources
     size_t * len = (size_t*) malloc(sizeof(size_t));
-    *len = 3;
+    *len = 2;
     uint8_t * dest = (uint8_t*) malloc(*len*sizeof(uint8_t));
+
     int readed = read_file(fd, "test/test.txt", 2, dest, len);
     printf("Content readed should return 'st' : ");
     printf("%s\n", (char*) dest);
-    printf("Bytes remaining to read should return 1 : ");
+    printf("Bytes readed return 2 : ");
     printf("%zu\n", *len);
     printf("It should return 0 : ");
     printf("returned %d\n", readed);
+
+    *len = 3;
+    readed = read_file(fd, "test/test.txt", 2, dest, len);
+    printf("Content readed should return 'st' : ");
+    printf("%s\n", (char*) dest);
+    printf("Bytes readed should return 2 : ");
+    printf("%zu\n", *len);
+    printf("It should return 1 : ");
+    printf("returned %d\n", readed);
+
     readed = read_file(fd, "test/", 2, dest, len);
     printf("It should return -1 : ");
     printf("returned %d\n", readed);
+
     readed = read_file(fd, "test/test.txt", 5, dest, len);
     printf("It should return -2 : ");
     printf("returned %d\n", readed);
+
+    // Freeing resources
     free(len);
     free(dest);
 
