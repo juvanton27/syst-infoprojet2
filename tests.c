@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     printf("It should return 0 : ");
     printf("returned %d\n", dir);
 
-    dir = is_dir(fd, "test/");
+    dir = is_dir(fd, "tests.dSYM/");
     printf("It should return 1 : ");
     printf("returned %d\n", dir);
 
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     int readed = read_file(fd, "test/test.txt", 2, dest, len);
     printf("Content readed should return 'st' : ");
     printf("%s\n", (char*) dest);
-    printf("Bytes readed return 2 : ");
+    printf("Bytes readed should return 2 : ");
     printf("%zu\n", *len);
     printf("It should return 0 : ");
     printf("returned %d\n", readed);
