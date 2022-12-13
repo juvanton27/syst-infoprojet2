@@ -1,6 +1,8 @@
 .DS_Store
+.vscode
 
 *.o
+*.tar
 
 tests
-test.dSYM/
+tests.dSYM/
