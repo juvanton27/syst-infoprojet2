@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
 #include "lib_tar.h"
 
 /**
@@ -42,7 +37,7 @@ int main(int argc, char **argv) {
     printf("\nDescribe: check_archive\n");
 
     int check = check_archive(fd);
-    printf("It should return 0 : ");
+    printf("It should return 8 : ");
     printf("returned %d\n", check);
 
     /**
@@ -92,6 +87,9 @@ int main(int argc, char **argv) {
     int link = is_symlink(fd, "tests.c");
     printf("It should return 0 : ");
     printf("returned %d\n", link);
+    link = is_symlink(fd, "test_link");
+    printf("It should return 1 : ");
+    printf("returned %d\n", link);
 
     /**
      * @brief list UT
@@ -100,7 +98,7 @@ int main(int argc, char **argv) {
 
     // Preparing resources
     size_t * no_entries = (size_t*) malloc(sizeof(size_t));
-    *no_entries = (size_t) 3;
+    *no_entries = (size_t) 4;
     char ** entries = (char **) malloc(*no_entries*sizeof(char*));
     for(int i=0; i<*no_entries; i++)
     {

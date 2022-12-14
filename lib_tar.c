@@ -1,9 +1,5 @@
 #include "lib_tar.h"
 
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-
 /**
  * Private method for devlopment purpose
  * Prints the header
@@ -32,6 +28,7 @@ void print_header(tar_header_t *head)
  */
 int check_archive(int tar_fd)
 {
+    int to_return = 0;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     // Set head at start of tar file
     lseek(tar_fd, 0, SEEK_SET);
@@ -40,20 +37,30 @@ int check_archive(int tar_fd)
         // Check if header not null
         if (strcmp((char *)head, "\0"))
         {
+            char *temp = (char *)head;
+            long counter = 0;
+            for (int i = 0; i < sizeof(tar_header_t); i++)
+            {
+                if (i >= 148 && i < 156)
+                    counter += 32;
+                else
+                    counter += temp[i];
+            }
             if (strcmp(head->magic, "ustar") != 0 && strcmp(head->magic, "\0") != 0)
                 return -1;
             char version[3];
             version[2] = '\0';
             if (strcmp(strncpy(version, head->version, 2), "00") != 0)
                 return -2;
-            if (head->chksum < 0)
+            if (strtol(head->chksum, NULL, 8) != counter)
                 return -3;
+            to_return++;
             int offset = strtol(head->size, NULL, 8);
             int size = sizeof(tar_header_t);
             lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
         }
     }
-    return 0;
+    return to_return;
 }
 
 /**
@@ -197,6 +204,16 @@ int is_symlink(int tar_fd, char *path)
  * @return zero if no directory at the given path exists in the archive,
  *         any other value otherwise.
  */
+int nombre_d_occurence(char * string, char character)
+{
+    int counter = 0;
+    for(int i=0; i<strlen(string); i++)
+    {
+        if(string[i] == character) counter++;
+    }
+    return counter;
+}
+
 int list(int tar_fd, char *path, char **entries, size_t *no_entries)
 {
     if (is_dir(tar_fd, path) == 0)
@@ -207,19 +224,22 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
     {
         if (strcmp((char *)head, "\0"))
         {
-            if(strcmp(head->name, path) == 0)
+            if (strcmp(head->name, path) == 0)
             {
-                char* directory = malloc(sizeof(char));
+                char *directory = malloc(sizeof(char));
                 strcpy(directory, head->name);
                 int counter = 0;
                 // Checks if no_entries not exceeded, if characters can still be read and if we are still in the right folder
-                while(counter < *no_entries && read(tar_fd, head, sizeof(tar_header_t)) > 0 && strstr(head->name, directory) != NULL)
+                while (counter < *no_entries && read(tar_fd, head, sizeof(tar_header_t)) > 0 && strstr(head->name, directory) != NULL)
                 {
-                    strcpy(*(entries+counter), head->name);
+                    if(nombre_d_occurence(head->name, '/') == 1)
+                    {
+                        strcpy(*(entries + counter), head->name);
+                        counter++;
+                    }
                     int offset = strtol(head->size, NULL, 8);
                     int size = sizeof(tar_header_t);
                     lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
-                    counter++;
                 }
                 *no_entries = counter;
                 return 1;
@@ -252,7 +272,8 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
  */
 ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len)
 {
-    if(exists(tar_fd, path) == 0 || is_file(tar_fd, path) == 0) return -1;
+    if (exists(tar_fd, path) == 0 || is_file(tar_fd, path) == 0)
+        return -1;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     lseek(tar_fd, 0, SEEK_SET);
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
@@ -261,15 +282,20 @@ ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *
         {
             if (strcmp(head->name, path) == 0)
             {
-                if(offset > strtol(head->size, NULL, 8)) return -2;
-                int size = strtol(head->size, NULL, 8)-offset;
-                lseek(tar_fd, offset, SEEK_CUR);
-                read(tar_fd, dest, size+1);
-                dest[size] = '\0';
-                printf("%s %i\n", (char*) dest, size);
-                int remaining = *len-size;
-                *len = size;
-                return remaining;
+                if (offset > strtol(head->size, NULL, 8))
+                    return -2;
+                if (is_symlink(tar_fd, head->name)) {
+                    strcpy(head->name, head->linkname);
+                    lseek(tar_fd, 0, SEEK_SET);
+                } else {
+                    int size = strtol(head->size, NULL, 8) - offset;
+                    lseek(tar_fd, offset, SEEK_CUR);
+                    read(tar_fd, dest, size + 1);
+                    dest[size] = '\0';
+                    int remaining = *len - size;
+                    *len = size;
+                    return remaining;
+                }
             }
             int offset = strtol(head->size, NULL, 8);
             int size = sizeof(tar_header_t);
