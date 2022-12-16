@@ -227,12 +227,15 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
             if (strcmp(head->name, path) == 0)
             {
                 char *directory = malloc(sizeof(char));
-                strcpy(directory, head->name);
+                if(is_symlink(tar_fd, head->name)) {
+                    strcpy(directory, head->linkname);
+                    lseek(tar_fd, 0, SEEK_SET);
+                } else strcpy(directory, head->name);
                 int counter = 0;
                 // Checks if no_entries not exceeded, if characters can still be read and if we are still in the right folder
                 while (counter < *no_entries && read(tar_fd, head, sizeof(tar_header_t)) > 0 && strstr(head->name, directory) != NULL)
                 {
-                    if(nombre_d_occurence(head->name, '/') == 1)
+                    if(nombre_d_occurence(head->name, '/') == 1 && strcmp(directory, head->name))
                     {
                         strcpy(*(entries + counter), head->name);
                         counter++;
@@ -272,35 +275,35 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
  */
 ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len)
 {
-    if (exists(tar_fd, path) == 0 || is_file(tar_fd, path) == 0)
-        return -1;
-    tar_header_t *head = malloc(sizeof(tar_header_t));
-    lseek(tar_fd, 0, SEEK_SET);
-    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
-    {
-        if (strcmp((char *)head, "\0"))
-        {
-            if (strcmp(head->name, path) == 0)
-            {
-                if (offset > strtol(head->size, NULL, 8))
-                    return -2;
-                if (is_symlink(tar_fd, head->name)) {
-                    strcpy(head->name, head->linkname);
-                    lseek(tar_fd, 0, SEEK_SET);
-                } else {
-                    int size = strtol(head->size, NULL, 8) - offset;
-                    lseek(tar_fd, offset, SEEK_CUR);
-                    read(tar_fd, dest, size + 1);
-                    dest[size] = '\0';
-                    int remaining = *len - size;
-                    *len = size;
-                    return remaining;
-                }
-            }
-            int offset = strtol(head->size, NULL, 8);
-            int size = sizeof(tar_header_t);
-            lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
-        }
-    }
+    // if (exists(tar_fd, path) == 0 || is_file(tar_fd, path) == 0)
+    //     return -1;
+    // tar_header_t *head = malloc(sizeof(tar_header_t));
+    // lseek(tar_fd, 0, SEEK_SET);
+    // while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    // {
+    //     if (strcmp((char *)head, "\0"))
+    //     {
+    //         if (strcmp(head->name, path) == 0)
+    //         {
+    //             if (offset > strtol(head->size, NULL, 8))
+    //                 return -2;
+    //             if (is_symlink(tar_fd, head->name)) {
+    //                 strcpy(head->name, head->linkname);
+    //                 lseek(tar_fd, 0, SEEK_SET);
+    //             } else {
+    //                 int size = strtol(head->size, NULL, 8) - offset;
+    //                 lseek(tar_fd, offset, SEEK_CUR);
+    //                 read(tar_fd, dest, size + 1);
+    //                 dest[size] = '\0';
+    //                 int remaining = *len - size;
+    //                 *len = size;
+    //                 return remaining;
+    //             }
+    //         }
+    //         int offset = strtol(head->size, NULL, 8);
+    //         int size = sizeof(tar_header_t);
+    //         lseek(tar_fd, offset % size ? (floor(offset / size) + 1) * size : offset, SEEK_CUR);
+    //     }
+    // }
     return 0;
 }

@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     printf("\nDescribe: check_archive\n");
 
     int check = check_archive(fd);
-    printf("It should return 8 : ");
+    printf("It should return 9 : ");
     printf("returned %d\n", check);
 
     /**
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     printf("It should return 0 : ");
     printf("returned %d\n", dir);
 
-    dir = is_dir(fd, "tests.dSYM/");
+    dir = is_dir(fd, "test/");
     printf("It should return 1 : ");
     printf("returned %d\n", dir);
 
