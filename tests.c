@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     printf("\nDescribe: check_archive\n");
 
     int check = check_archive(fd);
-    printf("It should return 9 : ");
+    printf("It should return 11 : ");
     printf("returned %d\n", check);
 
     /**
@@ -116,7 +116,22 @@ int main(int argc, char **argv) {
     printf("It should return 1 : ");
     printf("returned %d\n", listed);
 
+    listed = list(fd, "test_dir", entries, no_entries);
+    printf("List : [");
+    for(int i=0; i<*no_entries; i++)
+    {
+        printf(" %s ", entries[i]);
+    }
+    printf("]\n");
+    printf("Size : %zu\n", *no_entries);
+    printf("It should return 1 : ");
+    printf("returned %d\n", listed);
+
     listed = list(fd, "tests.c", entries, no_entries);
+    printf("It should return 0 : ");
+    printf("returned %d\n", listed);
+
+    listed = list(fd, "test_link", entries, no_entries);
     printf("It should return 0 : ");
     printf("returned %d\n", listed);
 
@@ -142,6 +157,15 @@ int main(int argc, char **argv) {
     printf("It should return 0 : ");
     printf("returned %d\n", readed);
 
+    readed = read_file(fd, "test_link", 2, dest, len);
+    printf("Content readed should return 'st' : ");
+    printf("%s\n", (char*) dest);
+    printf("Bytes readed should return 2 : ");
+    printf("%zu\n", *len);
+    printf("It should return 0 : ");
+    printf("returned %d\n", readed);
+
+
     *len = 3;
     readed = read_file(fd, "test/test.txt", 2, dest, len);
     printf("Content readed should return 'st' : ");
@@ -151,11 +175,28 @@ int main(int argc, char **argv) {
     printf("It should return 1 : ");
     printf("returned %d\n", readed);
 
+    *len = 2;
+    readed = read_file(fd, "test/test.txt", 0, dest, len);
+    printf("Content readed should return 'te' : ");
+    printf("%s\n", (char*) dest);
+    printf("Bytes readed should return 2 : ");
+    printf("%zu\n", *len);
+    printf("It should return 0 : ");
+    printf("returned %d\n", readed);
+
     readed = read_file(fd, "test/", 2, dest, len);
     printf("It should return -1 : ");
     printf("returned %d\n", readed);
 
+    readed = read_file(fd, "test_dir", 2, dest, len);
+    printf("It should return -1 : ");
+    printf("returned %d\n", readed);
+
     readed = read_file(fd, "test/test.txt", 5, dest, len);
+    printf("It should return -2 : ");
+    printf("returned %d\n", readed);
+
+    readed = read_file(fd, "test_link", 5, dest, len);
     printf("It should return -2 : ");
     printf("returned %d\n", readed);
 
