@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
     printf("It should return 1 : ");
     printf("returned %d\n", listed);
 
-    listed = list(fd, "test_dir", entries, no_entries);
+    listed = list(fd, "test/test2/", entries, no_entries);
     printf("List : [");
     for(int i=0; i<*no_entries; i++)
     {
@@ -125,6 +125,17 @@ int main(int argc, char **argv) {
     printf("]\n");
     printf("Size : %zu\n", *no_entries);
     printf("It should return 1 : ");
+    printf("returned %d\n", listed);
+
+    listed = list(fd, "test_dir", entries, no_entries);
+    printf("List : [");
+    for(int i=0; i<*no_entries; i++)
+    {
+        printf(" %s ", entries[i]);
+    }
+    printf("]\n");
+    printf("Size : %zu\n", *no_entries);
+    printf("This should return 1 : ");
     printf("returned %d\n", listed);
 
     listed = list(fd, "tests.c", entries, no_entries);
@@ -146,21 +157,21 @@ int main(int argc, char **argv) {
 
     // Preparing resources
     size_t * len = (size_t*) malloc(sizeof(size_t));
-    *len = 2;
+    *len = 5;
     uint8_t * dest = (uint8_t*) malloc(*len*sizeof(uint8_t));
 
-    int readed = read_file(fd, "test/test.txt", 2, dest, len);
+    int readed = read_file(fd, "test/test.txt", 3, dest, len);
     printf("Content readed should return 'st' : ");
-    printf("%s\n", (char*) dest);
-    printf("Bytes readed should return 2 : ");
+    printf("'%s'\n", (char*) dest);
+    printf("Bytes readed should return 5 : ");
     printf("%zu\n", *len);
     printf("It should return 0 : ");
     printf("returned %d\n", readed);
 
     readed = read_file(fd, "test_link", 2, dest, len);
     printf("Content readed should return 'st' : ");
-    printf("%s\n", (char*) dest);
-    printf("Bytes readed should return 2 : ");
+    printf("'%s'\n", (char*) dest);
+    printf("Bytes readed should return 5 : ");
     printf("%zu\n", *len);
     printf("It should return 0 : ");
     printf("returned %d\n", readed);
@@ -169,8 +180,8 @@ int main(int argc, char **argv) {
     *len = 3;
     readed = read_file(fd, "test/test.txt", 2, dest, len);
     printf("Content readed should return 'st' : ");
-    printf("%s\n", (char*) dest);
-    printf("Bytes readed should return 2 : ");
+    printf("'%s'\n", (char*) dest);
+    printf("Bytes readed should return 3 : ");
     printf("%zu\n", *len);
     printf("It should return 1 : ");
     printf("returned %d\n", readed);
@@ -178,10 +189,19 @@ int main(int argc, char **argv) {
     *len = 2;
     readed = read_file(fd, "test/test.txt", 0, dest, len);
     printf("Content readed should return 'te' : ");
-    printf("%s\n", (char*) dest);
+    printf("'%s'\n", (char*) dest);
     printf("Bytes readed should return 2 : ");
     printf("%zu\n", *len);
     printf("It should return 0 : ");
+    printf("returned %d\n", readed);
+
+    *len = 56;
+    readed = read_file(fd, "test/test.txt", 1, dest, len);
+    printf("Content readed should return 'te' : ");
+    printf("'%s'\n", (char*) dest);
+    printf("Bytes readed should return 36 : ");
+    printf("%zu\n", *len);
+    printf("It should return 20 : ");
     printf("returned %d\n", readed);
 
     readed = read_file(fd, "test/", 2, dest, len);
@@ -192,11 +212,11 @@ int main(int argc, char **argv) {
     printf("It should return -1 : ");
     printf("returned %d\n", readed);
 
-    readed = read_file(fd, "test/test.txt", 5, dest, len);
+    readed = read_file(fd, "test/test.txt", 56, dest, len);
     printf("It should return -2 : ");
     printf("returned %d\n", readed);
 
-    readed = read_file(fd, "test_link", 5, dest, len);
+    readed = read_file(fd, "test_link", 56, dest, len);
     printf("It should return -2 : ");
     printf("returned %d\n", readed);
 

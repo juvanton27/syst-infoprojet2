@@ -1,5 +1,7 @@
 #include "lib_tar.h"
 
+#define PATH_SIZE 1000 
+
 /**
  * Private method for devlopment purpose
  * Prints the header
@@ -220,19 +222,30 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
         return 0;
     tar_header_t *head = malloc(sizeof(tar_header_t));
     lseek(tar_fd, 0, SEEK_SET);
-    char * directory = malloc(sizeof(char));
+    char * directory = malloc(sizeof(char)*PATH_SIZE);
     strcpy(directory, path);
+    int sub_directory = nombre_d_occurence(directory, '/');
     while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
     {
         if (strcmp((char *)head, "\0"))
         {
             if (strcmp(head->name, directory) == 0 && is_symlink(tar_fd, head->name)) {
-                char new_directory[strlen(head->linkname)+2];
+                int length = 0;
+                if(nombre_d_occurence(head->linkname, '/') == 0) {
+                    length = strlen(head->linkname)+1;
+                } else {
+                    length = strlen(head->linkname);
+                }
+                char new_directory[length];
                 strcpy(new_directory, head->linkname);
-                new_directory[strlen(head->linkname)+1] = '/';
-                new_directory[strlen(head->linkname)+2] = '\0';
-                if(is_dir(tar_fd, new_directory) == 0) return 0;
+                if(nombre_d_occurence(head->linkname, '/') == 0) {
+                    new_directory[length-1] = '/';
+                }
+                new_directory[length] = '\0';
+                if(is_dir(tar_fd, new_directory) == 0 && is_symlink(tar_fd, head->linkname) == 0) 
+                    return 0;
                 strcpy(directory, new_directory);
+                sub_directory = nombre_d_occurence(directory, '/');
                 lseek(tar_fd, 0, SEEK_SET);
             } else {
                 if (strcmp(head->name, directory) == 0)
@@ -241,7 +254,8 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
                     // Checks if no_entries not exceeded, if characters can still be read and if we are still in the right folder
                     while (counter < *no_entries && read(tar_fd, head, sizeof(tar_header_t)) > 0)
                     {
-                        if(nombre_d_occurence(head->name, '/') == 1 && strstr(head->name, directory) != NULL && strcmp(directory, head->name) != 0)
+                        // Checks if in the good [sub]directory
+                        if((nombre_d_occurence(head->name, '/') == sub_directory || (nombre_d_occurence(head->name, '/') == sub_directory+1 && is_dir(tar_fd, head->name))) && strstr(head->name, directory) != NULL && strcmp(directory, head->name) != 0)
                         {
                             strcpy(*(entries + counter), head->name);
                             counter++;
@@ -283,49 +297,40 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries)
 ssize_t read_file(int tar_fd, char *path, size_t offset, uint8_t *dest, size_t *len)
 {
     // Checks if the given file exists and if it's a file or a symlink
-    // if (is_file(tar_fd, path) == 0 && is_symlink(tar_fd, path) == 0)
-    //     return -1;
-    // tar_header_t *head = malloc(sizeof(tar_header_t));
-    // lseek(tar_fd, 0, SEEK_SET);
-    // char * file = malloc(sizeof(char));
-    // strcpy(file, path);
-    // while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
-    // {
-    //     // Checks if header not null
-    //     if (strcmp((char *)head, "\0"))
-    //     {
-    //         // Checks if head name correspond to given file and if it's a symlink
-    //         if (strcmp(head->name, file) == 0 && is_symlink(tar_fd, head->name)) {
-    //             // Checks if real file is a file or a symlink
-    //             if(is_file(tar_fd, head->linkname)==0 && is_symlink(tar_fd, head->linkname) == 0)
-    //                 return -1;
-    //             strcpy(file, head->linkname);
-    //             lseek(tar_fd, 0, SEEK_SET); // Get back to the beginning of the tar file to check with the real file this time
-    //         } else {
-    //             // Checks if head name correspond to given file
-    //             if (strcmp(head->name, file) == 0) {
-    //                 // Checks if offset exceed the size of the given file
-    //                 if (offset > strtol(head->size, NULL, 8))
-    //                     return -2;
-    //                 int size = strtol(head->size, NULL, 8) - offset;
-    //                 lseek(tar_fd, offset, SEEK_CUR);
-    //                 if(size < *len)
-    //                 {
-    //                     read(tar_fd, dest, size + 1);
-    //                     dest[size] = '\0';
-    //                 } else {
-    //                     read(tar_fd, dest, *len + 1);
-    //                     dest[*len] = '\0';
-    //                 }
-    //                 int remaining = *len - size;
-    //                 if(size < *len) *len = size;
-    //                 return remaining <= 0 ? 0: remaining;
-    //             }
-    //             int offset_heer = strtol(head->size, NULL, 8);
-    //             int size_heer = sizeof(tar_header_t);
-    //             lseek(tar_fd, offset_heer % size_heer ? (floor(offset_heer / size_heer) + 1) * size_heer : offset_heer, SEEK_CUR);
-    //         }
-    //     }
-    // }
+    if (is_file(tar_fd, path) == 0 && is_symlink(tar_fd, path) == 0)
+        return -1;
+    tar_header_t *head = malloc(sizeof(tar_header_t));
+    lseek(tar_fd, 0, SEEK_SET);
+    char * file = malloc(sizeof(char)*PATH_SIZE);
+    strcpy(file, path);
+    while (read(tar_fd, head, sizeof(tar_header_t)) > 0)
+    {
+        // Checks if header not null
+        if (strcmp((char *)head, "\0"))
+        {
+            // Checks if head name correspond to given file and if it's a symlink
+            if (strcmp(head->name, file) == 0 && is_symlink(tar_fd, head->name)) {
+                // Checks if real file is a file or a symlink
+                if(is_file(tar_fd, head->linkname)==0 && is_symlink(tar_fd, head->linkname) == 0)
+                    return -1;
+                strcpy(file, head->linkname);
+                lseek(tar_fd, 0, SEEK_SET); // Get back to the beginning of the tar file to check with the real file this time
+            } else {
+                // Checks if head name correspond to given file
+                if (strcmp(head->name, file) == 0) {
+                    int file_size = strtol(head->size, NULL, 8);
+                    if(offset > file_size) return -2;
+                    size_t readable = *len > file_size ? file_size - offset : *len;
+                    lseek(tar_fd, offset, SEEK_CUR);
+                    *len = read(tar_fd, dest, readable);
+                    if(file_size > *len) return file_size - *len - offset;
+                    return 0;
+                }
+                int offset_heer = strtol(head->size, NULL, 8);
+                int size = sizeof(tar_header_t);
+                lseek(tar_fd, offset_heer % size ? (floor(offset_heer / size) + 1) * size : offset_heer, SEEK_CUR);
+            }
+        }
+    }
     return 0;
 }
